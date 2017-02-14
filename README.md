@@ -1,102 +1,70 @@
 #**Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-<img src="laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
-
-Overview
+##Writeup
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+### Reflection
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
+My pipeline consisted of 5 steps.
 
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
+1. Convert the images to greyscale
+2. Use Gaussian blur on the greyscale image
+3. Use the canny algorithm to detect edges in the image;
+ applying low threshold of 50 and high threshold of 150 to
+ reject unwanted pixels
+![The original image](test_images/solidWhiteCurve.jpg)
+![The image after canny edge detection](test_images/out/solidWhiteCurve.jpg.canny.jpg)
 
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
+3. Select a region of interest on the image that only contains
+ the lane of interest and ignores other features on the road such
+  as cars and trees
+![The selected region of interest](test_images/out/solidWhiteCurve.jpg.masked.jpg)
+4. Perform hough transformation on the regions of interest of the
+ 'canny' image to extract lane lines from the canny edges; this was
+  achieved by defining the hough space limits, providing
+  minimum/maximum number of pixels that would qualify to form a
+  line and determining the threshold number of votes for line
+  formation on the hough space
+5. Finally drawing the hough lines on the image
+![The lane detected image after hough transform](test_images/out/solidWhiteCurve.jpg.lane_detect.jpg)
+
+In order to draw a single line on the left and right lanes,
+ I modified the draw_lines() function by looping through all the lines
+ and selecting the lines of interest as follows: any line with a 
+ positive gradient belonged to the right lane and the negative gradient 
+ lines belonged to the left; I collected all points of the left and 
+ right lanes in lists.
+ Finally, after collecting the lines, I used the numpy library's 
+ polyfit function to determine an average line for each of the lanes. 
+ From this average line, I drew the lane lines over the image using 
+ the start point of the line to the end point of the line.
+ For the left lane, the start point was smallest value of X and 
+ largest value of X while for the right lane, the start point was the 
+ largest value of X and largest value of Y because of their respective 
+ gradients. 
 
 
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-1. Describe the pipeline
-2. Identify any shortcomings
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
+###2. Identify potential shortcomings with your current pipeline
 
 
-The Project
----
+One potential shortcoming would be what would happen
+ when we had a curved road. This is for the following reasons:
+ 
+1. The current algorithm uses gradients to differentiate lanes and determine
+placement of the lines on the road. The gradients for the lanes would swap signs
+if a steep curve on the road was encountered.
+2. The current algorithm for drawing lines on the road extrapolates
+ a linear average straight line which would throw the resultant line all
+ over the place when a vehicle is moving through a curve.
+ 
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you can install the starter kit or follow the install instructions below to get started on this project. ##
+Another shortcoming could be: if the distance between the self driving
+vehicle and the vehicle ahead was small, I suspect the hough transform
+algorithm might not be accurate as the region of interest will also
+include an unwanted object, the vehicle ahead.
 
-**Step 1:** Getting setup with Python
 
-To do this project, you will need Python 3 along with the numpy, matplotlib, and OpenCV libraries, as well as Jupyter Notebook installed. 
+###3. Suggest possible improvements to your pipeline
 
-We recommend downloading and installing the Anaconda Python 3 distribution from Continuum Analytics because it comes prepackaged with many of the Python dependencies you will need for this and future projects, makes it easy to install OpenCV, and includes Jupyter Notebook.  Beyond that, it is one of the most common Python distributions used in data analytics and machine learning, so a great choice if you're getting started in the field.
-
-Choose the appropriate Python 3 Anaconda install package for your operating system <A HREF="https://www.continuum.io/downloads" target="_blank">here</A>.   Download and install the package.
-
-If you already have Anaconda for Python 2 installed, you can create a separate environment for Python 3 and all the appropriate dependencies with the following command:
-
-`>  conda create --name=yourNewEnvironment python=3 anaconda`
-
-`>  source activate yourNewEnvironment`
-
-**Step 2:** Installing OpenCV
-
-Once you have Anaconda installed, first double check you are in your Python 3 environment:
-
-`>python`    
-`Python 3.5.2 |Anaconda 4.1.1 (x86_64)| (default, Jul  2 2016, 17:52:12)`  
-`[GCC 4.2.1 Compatible Apple LLVM 4.2 (clang-425.0.28)] on darwin`  
-`Type "help", "copyright", "credits" or "license" for more information.`  
-`>>>`   
-(Ctrl-d to exit Python)
-
-run the following commands at the terminal prompt to get OpenCV:
-
-`> pip install pillow`  
-`> conda install -c menpo opencv3=3.1.0`
-
-then to test if OpenCV is installed correctly:
-
-`> python`  
-`>>> import cv2`  
-`>>>`  (i.e. did not get an ImportError)
-
-(Ctrl-d to exit Python)
-
-**Step 3:** Installing moviepy  
-
-We recommend the "moviepy" package for processing video in this project (though you're welcome to use other packages if you prefer).  
-
-To install moviepy run:
-
-`>pip install moviepy`  
-
-and check that the install worked:
-
-`>python`  
-`>>>import moviepy`  
-`>>>`  (i.e. did not get an ImportError)
-
-(Ctrl-d to exit Python)
-
-**Step 4:** Opening the code in a Jupyter Notebook
-
-You will complete this project in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
-
-Jupyter is an ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, run the following command at the terminal prompt (be sure you're in your Python 3 environment!):
-
-`> jupyter notebook`
-
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
-
-**Step 5:** Complete the project and submit both the Ipython notebook and the project writeup
-
+A possible improvement would be to use an algorithm that draws curved lines
+instead of a straight line algorithm.
