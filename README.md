@@ -1,7 +1,7 @@
 #**Finding Lane Lines on the Road** 
 
-##Writeup
----
+This is a write-up and jupyter results repo for the LaneLines project which 
+involves detection of lane lines on a road.
 
 ### Reflection
 
@@ -44,7 +44,7 @@ In order to draw a single line on the left and right lanes,
  gradients. 
 
 
-###2. Identify potential shortcomings with your current pipeline
+###Shortcommings of this pipeline
 
 
 One potential shortcoming would be what would happen
